@@ -29,7 +29,7 @@ print(f"% video senza corrispondente YT: {count/len(data)}")
 
 url = "https://www.googleapis.com/youtube/v3/videos"
 
-#Test with one video
+# Test with one video
 # video = data[1]
 # params = {
 #         "part": "snippet,statistics",
