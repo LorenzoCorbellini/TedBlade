@@ -1,10 +1,7 @@
 '''
-Questo job aggrega i dati di youtube con i video di ted
-
-Il job produce una collezione di video di ted, in cui ogni documento 'video'
-contiene anche i dati di youtube (se esistono)
+Questo job esegue una query per prendere dal dataset
+tutti gli speakers che hanno fatto dei talks da soli
 '''
-
 import sys
 import json
 import pyspark
@@ -16,10 +13,11 @@ from pyspark.context import SparkContext
 from awsglue.context import GlueContext
 from awsglue.job import Job
 
+from pyspark.sql import functions as F
+from pyspark.sql.window import Window
+
 import boto3
 from botocore.exceptions import ClientError
-
-###### HELPER FUNCTIONS
 
 def get_secret():
 
@@ -78,44 +76,30 @@ password = secret["password"]
 db_name = "unibg_tedx_2026"
 db_uri = f"mongodb+srv://{username}:{password}@cluster0.hduxclv.mongodb.net/?appName=Cluster0"
 
-related_videos = mongo_collection_to_DF(db_uri, db_name, "tedx_data_related")
-matches = mongo_collection_to_DF(db_uri, db_name, "matches")
-yt_data = mongo_collection_to_DF(db_uri, db_name, "video_stats")
+df_speakers = mongo_collection_to_DF(db_uri, db_name, "speakers")
 
-##### RENAME AND SELECT COLUMNS
+##### MANIPULATE DATA
 
-matches = matches.withColumnRenamed("_id", "id_ref")
+# Definiamo il pattern regex:
+# \\band\\b -> cerca la parola 'and' isolata (confini di parola)
+# | -> oppure
+# , -> cerca la virgola
+regex_pattern = "\\band\\b|,|\\+"
 
-yt_data = yt_data.withColumnRenamed("id", "yt_id") \
-            .withColumnRenamed("snippet", "yt_snippet") \
-            .withColumnRenamed("statistics", "yt_statistics") \
-            .select("yt_id", "yt_snippet", "yt_statistics")
-
-##### JOIN(S)
-
-# Data from 'related videos' -> we add youtube ids
-rv_ytids = related_videos.join(matches, related_videos.slug == matches.slug, "left") \
-    .drop("id_ref") \
-    .drop("score") \
-    .drop("slug")
-
-# Add data from youtube (views, likes, etc.)
-df1 = rv_ytids.join(yt_data, rv_ytids.yt_id == yt_data.yt_id, "left") \
-        .drop(yt_data["yt_id"])
-
-df1.show(5, truncate=False)
+# Applichiamo il filtro al DataFrame
+df_multi_speakers = df_speakers.filter(~F.col("speakers").rlike(regex_pattern))
+df_multi_speakers.show()
 
 ##### WRITE TO MONGODB ATLAS
-
 write_mongo_options = {
-        "connection.uri": db_uri,
-        "database": db_name,
-        "collection": "ted_with_yt_data",
-        "ssl": "true",
-        "ssl.domain_match": "false"
-    }
+    "connection.uri": db_uri,
+    "database": db_name,
+    "collection": "speakers_multi",
+    "ssl": "true",
+    "ssl.domain_match": "false"
+}
 
 from awsglue.dynamicframe import DynamicFrame
-result = DynamicFrame.fromDF(df1, glueContext, "nested")
+result = DynamicFrame.fromDF(df_multi_speakers, glueContext, "nested")
 
 glueContext.write_dynamic_frame.from_options(result, connection_type="mongodb", connection_options=write_mongo_options)

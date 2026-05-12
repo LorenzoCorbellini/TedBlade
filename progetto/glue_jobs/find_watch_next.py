@@ -1,3 +1,12 @@
+'''
+Consegna 2 a)
+
+Questo job assegna ad ogni video il video successivo watch_next
+
+Il job determina il watch_next selezionando il video con più
+tag in comune con il video di interesse
+'''
+
 import sys
 import json
 import pyspark

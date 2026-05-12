@@ -1,10 +1,9 @@
 '''
-Questo job aggrega i dati di youtube con i video di ted
+Consegna 2 b)
 
-Il job produce una collezione di video di ted, in cui ogni documento 'video'
-contiene anche i dati di youtube (se esistono)
+Questo job produce una collezione di documenti: ogni documento
+rappresenta uno speaker ed elenca tutti i talks da lui presentati 
 '''
-
 import sys
 import json
 import pyspark
@@ -16,10 +15,11 @@ from pyspark.context import SparkContext
 from awsglue.context import GlueContext
 from awsglue.job import Job
 
+from pyspark.sql import functions as F
+from pyspark.sql.window import Window
+
 import boto3
 from botocore.exceptions import ClientError
-
-###### HELPER FUNCTIONS
 
 def get_secret():
 
@@ -56,6 +56,7 @@ def mongo_collection_to_DF(db_uri, db_name, collection_name):
         }
     ).toDF()
 
+
 ###### READ PARAMETERS
 args = getResolvedOptions(sys.argv, ['JOB_NAME'])
 
@@ -68,8 +69,9 @@ spark = glueContext.spark_session
 job = Job(glueContext)
 job.init(args['JOB_NAME'], args)
 
-##### GET DATA FROM MONGODB ATLAS
 
+
+##### GET DATA FROM MONGODB ATLAS
 secret = get_secret()
 
 username = secret["username"]
@@ -78,44 +80,45 @@ password = secret["password"]
 db_name = "unibg_tedx_2026"
 db_uri = f"mongodb+srv://{username}:{password}@cluster0.hduxclv.mongodb.net/?appName=Cluster0"
 
-related_videos = mongo_collection_to_DF(db_uri, db_name, "tedx_data_related")
-matches = mongo_collection_to_DF(db_uri, db_name, "matches")
-yt_data = mongo_collection_to_DF(db_uri, db_name, "video_stats")
+# Speakers
 
-##### RENAME AND SELECT COLUMNS
+df_speakers = mongo_collection_to_DF(db_uri, db_name, "speakers")
+df_speakers = df_speakers.withColumnRenamed("speakers", "speaker")
 
-matches = matches.withColumnRenamed("_id", "id_ref")
+# Talks
 
-yt_data = yt_data.withColumnRenamed("id", "yt_id") \
-            .withColumnRenamed("snippet", "yt_snippet") \
-            .withColumnRenamed("statistics", "yt_statistics") \
-            .select("yt_id", "yt_snippet", "yt_statistics")
+df_talks = mongo_collection_to_DF(db_uri, db_name, "tedx_data")
 
-##### JOIN(S)
+##### MANIPULATE DATA
 
-# Data from 'related videos' -> we add youtube ids
-rv_ytids = related_videos.join(matches, related_videos.slug == matches.slug, "left") \
-    .drop("id_ref") \
-    .drop("score") \
-    .drop("slug")
+# lo speaker di df_speakers deve essere contenuto nella stringa 'speakers' di df_talks 
+# Nota: usiamo l'operatore .contains() per gestire i casi con più nomi
+df_1 = df_speakers.join(df_talks, F.col("speakers").contains(F.col("speaker")))
 
-# Add data from youtube (views, likes, etc.)
-df1 = rv_ytids.join(yt_data, rv_ytids.yt_id == yt_data.yt_id, "left") \
-        .drop(yt_data["yt_id"])
-
-df1.show(5, truncate=False)
+# creiamo dei gruppi in base agli speaker
+# per ogni speaker memorizziamo i talks in cui ha presentato
+df_speaker_talks = df_1.groupBy("speaker").agg(
+    F.collect_list(
+        F.struct(
+            df_talks["slug"],
+            F.col("title"),
+            F.col("url"),
+            F.col("duration"),
+            F.col("publishedAt")
+        )
+    ).alias("talks")
+)
 
 ##### WRITE TO MONGODB ATLAS
-
 write_mongo_options = {
-        "connection.uri": db_uri,
-        "database": db_name,
-        "collection": "ted_with_yt_data",
-        "ssl": "true",
-        "ssl.domain_match": "false"
-    }
+    "connection.uri": db_uri,
+    "database": db_name,
+    "collection": "speaker_with_talks",
+    "ssl": "true",
+    "ssl.domain_match": "false"
+}
 
 from awsglue.dynamicframe import DynamicFrame
-result = DynamicFrame.fromDF(df1, glueContext, "nested")
+result = DynamicFrame.fromDF(df_speaker_talks, glueContext, "nested")
 
 glueContext.write_dynamic_frame.from_options(result, connection_type="mongodb", connection_options=write_mongo_options)

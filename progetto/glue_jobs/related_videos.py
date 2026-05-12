@@ -1,3 +1,10 @@
+'''
+Questo job joina il file dei related videos con il file dei dati
+di ted
+
+Il job produce una collezione di video ted, in cui ogni documento 'video'
+contiene anche i video related
+'''
 ###### TEDx-Load-Aggregate-Model
 ######
 
