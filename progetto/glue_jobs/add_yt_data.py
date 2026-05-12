@@ -96,8 +96,7 @@ yt_data = yt_data.withColumnRenamed("id", "yt_id") \
 # Data from 'related videos' -> we add youtube ids
 rv_ytids = related_videos.join(matches, related_videos.slug == matches.slug, "left") \
     .drop("id_ref") \
-    .drop("score") \
-    .drop("slug")
+    .drop("score")
 
 # Add data from youtube (views, likes, etc.)
 df1 = rv_ytids.join(yt_data, rv_ytids.yt_id == yt_data.yt_id, "left") \
