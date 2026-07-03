@@ -11,7 +11,7 @@ import requests, json, os, boto3
 
 API_KEY = region = os.environ['YT_API_KEY']
 CHANNEL_ID = "UCAuUUnT6oDeKwE6v1NGQxug"
-BUCKET_NAME = "yt-data-2834"
+BUCKET_NAME = "yt-data-2835"
 
 data = []
 video_stats = []
@@ -22,7 +22,7 @@ def lambda_handler(event, context):
     
     read_from_s3 = s3_client.get_object(
         Key="matches.json",
-        Bucket="yt-data-2834"
+        Bucket=BUCKET_NAME
     )
     data = json.loads(read_from_s3["Body"].read().decode("utf-8"))
     print(data)
@@ -54,7 +54,7 @@ def lambda_handler(event, context):
 
     save_to_s3 = s3_client.put_object(
         Key="video_stats.json",
-        Bucket="yt-data-2834",
+        Bucket=BUCKET_NAME,
         Body=(json.dumps(video_stats).encode("utf-8"))
     )
 
