@@ -1,17 +1,38 @@
-"""
-TEDx MCP Server
-A simple MCP server exposing TEDx talks stored in MongoDB Atlas.
-University lesson demo - unibg_tedx_2026
-"""
-
 from mcp.server.fastmcp import FastMCP
 from motor.motor_asyncio import AsyncIOMotorClient
 from mcp.server.transport_security import TransportSecuritySettings
 
+import boto3
+from botocore.exceptions import ClientError
+
+from json import loads
+
+def get_secret():
+    secret_name = "MongoBD"
+    region_name = "us-east-1"
+
+    session = boto3.session.Session()
+    client = session.client(
+        service_name='secretsmanager',
+        region_name=region_name
+    )
+
+    try:
+        get_secret_value_response = client.get_secret_value(
+            SecretId=secret_name
+        )
+    except ClientError as e:
+        raise e
+
+    secret = get_secret_value_response['SecretString']
+    return loads(secret)
+
 # --- MongoDB Atlas connection ---
-DB_PASSWORD = 'ULo5Z0U38nJJRblI'
+secret = get_secret()
+username = secret["username"]
+password = secret["password"]
 MONGO_URI = (
-    f"mongodb+srv://lcorbellini_db_user:{DB_PASSWORD}"
+    f"mongodb+srv://{username}:{password}"
     "@cluster0.hduxclv.mongodb.net/?appName=Cluster0"
 )
 
@@ -72,20 +93,20 @@ async def search_by_keyword(keyword: str, limit: int = 5) -> list[dict]:
 @mcp.tool()
 async def get_talk(slug: str) -> dict:
     """Get full details for a single talk by its slug."""
-    talk = await talks.find_one({"slug": slug}, {"_id": 0})
-    return talk or {"error": f"No talk found with slug '{slug}'"}
+    result = await talks.find_one({"slug": slug}, {"_id": 0})
+    return result or {"error": f"No talk found with slug '{slug}'"}
 
 @mcp.tool()
 async def get_speaker(speaker: str) -> dict:
     """Get full details for a single speaker by its name (case-insensitive full match)."""
-    speaker = await speakers.find_one({"speaker": {"$regex": speaker, "$options": "i"}}, {"_id": 0})
-    return speaker or {"error": f"No speaker found with name '{speaker}'"}
+    result = await speakers.find_one({"speaker": {"$regex": speaker, "$options": "i"}}, {"_id": 0})
+    return result or {"error": f"No speaker found with name '{speaker}'"}
 
 @mcp.tool()
 async def get_transcript(slug: str) -> dict:
     """Get full transcript of a talk by its slug."""
-    transcript = await transcripts.find_one({"slug": slug}, {"_id": 0})
-    return transcript or {"error": f"No transcript found for talk with slug '{slug}'"}
+    result = await transcripts.find_one({"slug": slug}, {"_id": 0})
+    return result or {"error": f"No transcript found for talk with slug '{slug}'"}
 
 @mcp.tool()
 async def top_tags(limit: int = 10) -> list[dict]:
