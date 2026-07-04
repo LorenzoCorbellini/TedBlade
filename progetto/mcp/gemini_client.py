@@ -7,11 +7,6 @@ from google import genai
 from mcp import ClientSession
 from mcp.client.streamable_http import streamablehttp_client
 
-
-SERVER_IP = "100.26.109.6"
-SERVER_URL = f"https://{SERVER_IP}:8443/mcp"
-
-
 def load_env():
     with open("api_key.env") as f:
         for line in f:
@@ -30,12 +25,11 @@ def insecure_httpx_client(**kwargs):
 
 async def main():
     load_env()
-
+    SERVER_URL = f"https://{os.environ['SERVER_IP']}:8443/mcp"
     gemini = genai.Client()
 
     prompt = """
-    Trova lo speaker TED più famoso sul cambiamento climatico
-    e analizza performance e statistiche.
+    Gemini, verifica che le funzioni del server MCP funzionino.
     """
 
     print("Connessione MCP...")

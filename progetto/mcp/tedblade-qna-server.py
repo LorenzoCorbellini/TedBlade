@@ -57,10 +57,10 @@ mcp = FastMCP(
 
 @mcp.tool()
 async def search_by_tag(tag: str, limit: int = 5) -> list[dict]:
-    """Search TEDx talks that contain a given tag (e.g. 'culture', 'media')."""
+    """Search TEDx talks that contain a given tag (e.g. 'culture', 'media'. Case sensitive, full match)."""
     cursor = talks.find(
-        {"tags": tag.lower()},
-        {"_id": 0, "title": 1, "speakers": 1, "url": 1, "tags": 1, "duration": 1},
+        {"tags": tag},
+        {"_id": 0, "slug": 1,"title": 1, "speakers": 1, "url": 1, "tags": 1, "duration": 1},
     ).limit(limit)
     return await cursor.to_list(length=limit)
 
@@ -70,7 +70,7 @@ async def search_by_speaker(speaker: str, limit: int = 5) -> list[dict]:
     """Find talks by speaker name (case-insensitive partial match)."""
     cursor = talks.find(
         {"speakers": {"$regex": speaker, "$options": "i"}},
-        {"_id": 0, "title": 1, "speakers": 1, "url": 1, "publishedAt": 1},
+        {"_id": 0, "slug": 1, "title": 1, "speakers": 1, "url": 1, "publishedAt": 1},
     ).limit(limit)
     return await cursor.to_list(length=limit)
 
@@ -85,7 +85,7 @@ async def search_by_keyword(keyword: str, limit: int = 5) -> list[dict]:
                 {"description": {"$regex": keyword, "$options": "i"}},
             ]
         },
-        {"_id": 0, "title": 1, "speakers": 1, "url": 1, "description": 1},
+        {"_id": 0, "slug": 1, "title": 1, "speakers": 1, "url": 1, "description": 1},
     ).limit(limit)
     return await cursor.to_list(length=limit)
 
@@ -120,6 +120,12 @@ async def top_tags(limit: int = 10) -> list[dict]:
     ]
     return await talks.aggregate(pipeline).to_list(length=limit)
 
+@mcp.tool()
+async def get_available_tags() -> list[str]:
+    """Return a complete list of all unique available tags in the database, sorted alphabetically."""
+    raw_tags = await talks.distinct("tags")
+    clean_tags = sorted([tag for tag in raw_tags if tag is not None]) # No null values
+    return clean_tags
 
 # ============================================================
 # RESOURCES
