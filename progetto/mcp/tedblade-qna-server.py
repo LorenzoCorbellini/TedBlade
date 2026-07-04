@@ -104,7 +104,7 @@ async def get_speaker(speaker: str) -> dict:
 
 @mcp.tool()
 async def get_transcript(slug: str) -> dict:
-    """Get full transcript of a talk by its slug."""
+    """Get full transcript of a talk by its slug. This includes what the speaker said in the talk, with timestamps."""
     result = await transcripts.find_one({"slug": slug}, {"_id": 0})
     return result or {"error": f"No transcript found for talk with slug '{slug}'"}
 
