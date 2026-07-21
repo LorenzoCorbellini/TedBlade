@@ -1,0 +1,22 @@
+// CONNECTION TO DB
+
+const mongoose = require('mongoose');
+mongoose.Promise = global.Promise;
+let isConnected;
+
+require('dotenv').config({ path: './variables.env' });
+
+// Restituiamo un'immagine logica del db su cui facciamo query
+module.exports = connect_to_db = () => {
+    // Se la connessione esiste già, usiamo quella
+    if (isConnected) {
+        console.log('=> using existing database connection');
+        return Promise.resolve();
+    }
+ 
+    console.log('=> using new database connection');
+    // Se non c'è già una connessione, ne creiamo una nuova
+    return mongoose.connect(process.env.DB, {dbName: 'unibg_tedx_2026', useNewUrlParser: true, useUnifiedTopology: true}).then(db => {
+        isConnected = db.connections[0].readyState;
+    });
+};
