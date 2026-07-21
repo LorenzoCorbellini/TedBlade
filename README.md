@@ -11,6 +11,8 @@
 ├── esercitazioni
 │   └── file relativi alle esercitazioni
 ├── progetto
-	└── file relativi al progetto
+	├── file relativi al progetto
+	└── flutter
+		└── codice dell'app Flutter
 └── README.md
 ```
