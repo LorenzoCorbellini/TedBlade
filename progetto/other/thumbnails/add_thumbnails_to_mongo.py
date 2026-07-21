@@ -1,5 +1,5 @@
+import os, csv
 from pymongo import MongoClient
-import os
 from dotenv import load_dotenv
 from pymongo import MongoClient
 
@@ -15,13 +15,17 @@ collection = db["speakers_full_data"]
 
 cursor = collection.find({}, { "speaker": 1 })
 
-for document in cursor:
-    speaker = document.get("speaker")
-    if speaker is not None:
-      thumbnail_url = "https://tedblade-public-assets.s3.us-east-1.amazonaws.com/default-avatar.jpg"
+with open('thumbnails.csv', mode='r', encoding='utf-8') as file:
+    reader = csv.DictReader(file)
+    
+    headers = next(reader) # We disregard the headers
+    
+    for line in reader:
+      doc_id = line['_id']
       collection.update_one(
-        { "_id": document["_id"] },
-        { "$set": { "thumbnail_url": thumbnail_url } }
+        { '_id': line['_id'] },
+        { '$set': { 'thumbnail_url': line['thumbnail url'] } }
       )
+      print(f'Updated url for {line['speaker full name']}')
 
 print('done')
