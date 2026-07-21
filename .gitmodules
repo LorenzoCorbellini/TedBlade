@@ -1,0 +1,3 @@
+[submodule "progetto/flutter/tedblade_app"]
+	path = progetto/flutter/tedblade_app
+	url = https://github.com/LorenzoCorbellini/TedBlade-Flutter.git
