@@ -1,3 +1,50 @@
-progetto/flutter/tedblade_app/
+# Miscellaneous
+progetto/flutter/tedblade_app/*.class
+progetto/flutter/tedblade_app/*.log
+progetto/flutter/tedblade_app/*.pyc
+progetto/flutter/tedblade_app/*.swp
+progetto/flutter/tedblade_app/.DS_Store
+progetto/flutter/tedblade_app/.atom/
+progetto/flutter/tedblade_app/.build/
+progetto/flutter/tedblade_app/.buildlog/
+progetto/flutter/tedblade_app/.history
+progetto/flutter/tedblade_app/.svn/
+progetto/flutter/tedblade_app/.swiftpm/
+progetto/flutter/tedblade_app/migrate_working_dir/
+
+# IntelliJ related
+progetto/flutter/tedblade_app/*.iml
+progetto/flutter/tedblade_app/*.ipr
+progetto/flutter/tedblade_app/*.iws
+progetto/flutter/tedblade_app/.idea/
+
+# The .vscode folder contains launch configuration and tasks you configure in
+# VS Code which you may wish to be included in version control, so this line
+# is commented out by default.
+progetto/flutter/tedblade_app/.vscode/
+
+# Flutter/Dart/Pub related
+progetto/flutter/tedblade_app/**/doc/api/
+progetto/flutter/tedblade_app/**/ios/Flutter/.last_build_id
+progetto/flutter/tedblade_app/.dart_tool/
+progetto/flutter/tedblade_app/.flutter-plugins-dependencies
+progetto/flutter/tedblade_app/.pub-cache/
+progetto/flutter/tedblade_app/.pub/
+progetto/flutter/tedblade_app/build/
+progetto/flutter/tedblade_app/coverage/
+
+# Symbolication related
+progetto/flutter/tedblade_app/app.*.symbols
+
+# Obfuscation related
+progetto/flutter/tedblade_app/app.*.map.json
+
+# Android Studio will place build artifacts here
+progetto/flutter/tedblade_app/android/app/debug
+progetto/flutter/tedblade_app/android/app/profile
+progetto/flutter/tedblade_app/android/app/release
+
+*.code-workspace
+
 **.env
 **/__pycache__
